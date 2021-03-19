@@ -24,17 +24,13 @@
  * 
  * 
  */
-
-
-
 #include <dht.h> // includes the dht library
 #include <SPI.h>
 #include <SD.h>
 
-File myFile; // sets the file
 
+const int chipSelect = 10;
 dht DHT; // sets the dht to DHT
-
 #define DHT11_PIN 7 // defines the pin used for the dht
 
 bool lampStatus;
@@ -46,20 +42,26 @@ void setup() {
   pinMode(8, OUTPUT); //sets pin 1 and 2 || These are the Relays
   pinMode(9, OUTPUT);
 
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
-
+  while (!Serial);
 
   Serial.print("Initializing SD card...");
 
-  if (!SD.begin(4)) {
-    Serial.println("initialization failed!");
-    while (1);
+  if (!SD.begin(chipSelect)) {
+
+    Serial.println("initialization failed. Things to check:");
+    Serial.println("1. is a card inserted?");
+    Serial.println("2. is your wiring correct?");
+    Serial.println("3. did you change the chipSelect pin to match your shield or module?");
+    Serial.println("Note: press reset or reopen this serial monitor after fixing your issue!");
+
+    while (true);
+
   }
   Serial.println("initialization done.");
-
 }
+
+
+
 
 void loop() {
     float chk = DHT.read11(DHT11_PIN); // polls the DHT
@@ -100,7 +102,41 @@ void loop() {
   Serial.println(DHTTA); // prints the temp
   Serial.print("Humidity = ");
   Serial.println(DHTHA); // prints the humid
-  delay(60000); // delays 1 second before trying again
   
+      String dataString = "";
 
+      dataString += String(lampStatus);
+      dataString += ",";
+      dataString += String(pumpStatus);
+      dataString += ",";
+      dataString += String(DHTTA);
+      dataString += ",";
+      dataString += String(DHTHA);
+
+      
+
+    
+  File dataFile = SD.open("datalog.txt", FILE_WRITE);
+
+  // if the file is available, write to it:
+
+  if (dataFile) {
+    
+      dataFile.println(dataString); // prints the humid
+
+      dataFile.close();
+
+    // print to the serial port too:
+
+    Serial.println(dataString);
+
+    
+
+  }
+
+  else {
+
+    Serial.println("error opening datalog.txt");
+
+  }
 }
